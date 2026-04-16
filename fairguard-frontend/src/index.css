@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --material-symbols-font: 'Material Symbols Outlined';
+  }
+}
+
+.material-symbols-outlined {
+  font-family: var(--material-symbols-font);
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+@utility micro-grid {
+  background-image: radial-gradient(circle, #c3c6d6 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+@utility micro-grid-bg {
+  background-image: radial-gradient(circle, #737685 1px, transparent 1px);
+  background-size: 16px 16px;
+  opacity: 0.05;
+}
+
+@utility micro-grid-overlay {
+  background-image: radial-gradient(#c3c6d6 0.5px, transparent 0.5px);
+  background-size: 8px 8px;
+}
