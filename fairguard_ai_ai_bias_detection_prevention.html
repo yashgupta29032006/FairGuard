@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>FairGuard AI – AI Bias Detection & Prevention</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <!-- React and Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
+    <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "secondary-container": "#aad6ff",
+                        "on-tertiary-fixed-variant": "#930010",
+                        "on-primary-container": "#c4d2ff",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "primary": "#003d9b",
+                        "surface-dim": "#d8dadc",
+                        "on-surface": "#191c1e",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-tint": "#0c56d0",
+                        "secondary-fixed-dim": "#9fcbf4",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-fixed": "#ffdad6",
+                        "tertiary": "#8c000e",
+                        "on-surface-variant": "#434654",
+                        "on-tertiary-fixed": "#410003",
+                        "surface-container-highest": "#e0e3e5",
+                        "background": "#f7f9fb",
+                        "surface-container-low": "#f2f4f6",
+                        "on-tertiary-container": "#ffc5bf",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "secondary": "#346286",
+                        "secondary-fixed": "#cce5ff",
+                        "error": "#ba1a1a",
+                        "outline": "#737685",
+                        "outline-variant": "#c3c6d6",
+                        "tertiary-fixed-dim": "#ffb3ac",
+                        "surface": "#f7f9fb",
+                        "on-primary-fixed": "#001848",
+                        "on-secondary-fixed-variant": "#184a6d",
+                        "primary-container": "#0052cc",
+                        "on-primary-fixed-variant": "#0040a2",
+                        "inverse-primary": "#b2c5ff",
+                        "primary-fixed-dim": "#b2c5ff",
+                        "surface-container-high": "#e6e8ea",
+                        "tertiary-container": "#b4151d",
+                        "on-background": "#191c1e",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed": "#001d31",
+                        "surface-bright": "#f7f9fb",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#dae2ff",
+                        "on-secondary-container": "#2f5e81",
+                        "surface-variant": "#e0e3e5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .micro-grid {
+            background-image: radial-gradient(circle, #c3c6d6 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+        .micro-grid-bg {
+            background-image: radial-gradient(circle, #737685 1px, transparent 1px);
+            background-size: 16px 16px;
+            opacity: 0.05;
+        }
+        .micro-grid-overlay {
+            background-image: radial-gradient(#c3c6d6 0.5px, transparent 0.5px);
+            background-size: 8px 8px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body antialiased">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+        const { MemoryRouter, Routes, Route, Link, useNavigate, useLocation } = ReactRouterDOM;
+
+        // --- Shared Components ---
+
+        const SideNavBar = () => {
+            const location = useLocation();
+            const isActive = (path) => location.pathname === path;
+
+            const navItems = [
+                { path: '/', label: 'Dashboard', icon: 'dashboard' },
+                { path: '/upload', label: 'Data Upload', icon: 'cloud_upload' },
+                { path: '/analysis', label: 'Bias Analysis', icon: 'analytics' },
+                { path: '/firewall', label: 'Decision Firewall', icon: 'gpp_maybe' },
+                { path: '/training', label: 'Model Training', icon: 'model_training' },
+                { path: '/explainability', label: 'Explainability', icon: 'psychology' }
+            ];
+
+            return (
+                <nav className="h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-900 flex flex-col py-6 border-r border-slate-200 dark:border-slate-800 z-50">
+                    <div className="px-6 mb-10">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary">
+                                <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>shield</span>
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold tracking-tight text-blue-900 dark:text-blue-100 font-headline">FairGuard AI</h1>
+                                <p className="text-xs font-label uppercase tracking-widest text-slate-500">The Arbiter</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex-1 space-y-1 px-4">
+                        {navItems.map((item) => (
+                            <Link 
+                                key={item.path}
+                                to={item.path}
+                                className={`flex items-center px-4 py-3 rounded-xl transition-all duration-150 ease-in-out ${
+                                    isActive(item.path) 
+                                    ? 'text-blue-800 dark:text-blue-300 font-bold border-r-4 border-blue-800 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-900/10' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                                }`}
+                            >
+                                <span className="material-symbols-outlined mr-3">{item.icon}</span>
+                                <span className="text-sm font-medium">{item.label}</span>
+                            </Link>
+                        ))}
+                    </div>
+                    <div className="px-6 mt-auto">
+                        <div className="flex items-center p-3 rounded-xl bg-slate-100 dark:bg-slate-800">
+                            <div className="h-10 w-10 rounded-full overflow-hidden mr-3">
+                                <img alt="User Profile" className="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMCTXC963X38Q1pqCIMsDzBxD38qb6kvHA5aT3eKUxZkwuJUXHO49VotOWcnsUKXqYL59KN-jSwli6bT3mbK9isrYigFpLZ_T2-jAxntiFsCQx9rK78fHNoGQKP-gRUoU6TEyXEpvgfwV8gq5zhFPLGt18DFCBpRaKe5XPS56so7N-LB7EkEHmtIchknTNglrkN5hi7K_4zaOdsQ-HTUrFIduurHo8fhooxXmcH8lQ8SgUZTNwp1hVLUkrLb33HnpSE77I2ex34mo"/>
+                            </div>
+                            <div className="overflow-hidden">
+                                <p className="text-sm font-bold text-on-surface truncate">Alex Rivera</p>
+                                <p className="text-[10px] text-on-surface-variant uppercase tracking-wider truncate">Administrator</p>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            );
+        };
+
+        const TopAppBar = ({ title, showSearch = true, badge = null }) => {
+            return (
+                <header className="flex justify-between items-center h-16 ml-64 px-8 w-[calc(100%-16rem)] sticky top-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl z-40 shadow-sm dark:shadow-none">
+                    <div className="flex items-center gap-4">
+                        {title ? (
+                            <h2 className="font-headline text-lg font-bold text-on-surface">{title}</h2>
+                        ) : (
+                            <span className="text-slate-400 font-label uppercase tracking-widest text-[10px]">System Node: Primary</span>
+                        )}
+                        {badge && (
+                            <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase">{badge}</span>
+                        )}
+                        {showSearch && (
+                            <div className="relative ml-4">
+                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+                                <input className="pl-10 pr-4 py-1.5 bg-surface-container-high border-none rounded-full text-sm w-64 focus:ring-2 focus:ring-primary" placeholder="Search parameters..." type="text"/>
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex items-center space-x-6">
+                        <button className="text-slate-600 hover:text-blue-700 transition-transform scale-95 active:scale-90">
+                            <span className="material-symbols-outlined">notifications</span>
+                        </button>
+                        <button className="text-slate-600 hover:text-blue-700 transition-transform scale-95 active:scale-90">
+                            <span className="material-symbols-outlined">settings</span>
+                        </button>
+                        <button className="text-slate-600 hover:text-blue-700 transition-transform scale-95 active:scale-90">
+                            <span className="material-symbols-outlined">shield</span>
+                        </button>
+                    </div>
+                </header>
+            );
+        };
+
+        // --- Screen 1: Dashboard ---
+        const DashboardPage = () => {
+            const navigate = useNavigate();
+            return (
+                <div className="min-h-screen">
+                    <SideNavBar />
+                    <TopAppBar />
+                    <main className="ml-64 p-8">
+                        <div className="max-w-7xl mx-auto space-y-8">
+                            <div className="flex justify-between items-end mb-12">
+                                <div>
+                                    <h2 className="text-4xl font-extrabold font-headline tracking-tight text-primary">FairGuard – AI Bias Detection & Prevention</h2>
+                                    <p className="text-on-surface-variant mt-2 text-lg">Central command for algorithmic integrity and model auditing.</p>
+                                </div>
+                                <div className="flex space-x-4">
+                                    <button className="bg-surface-container-high text-on-secondary-container px-6 py-3 rounded-md font-semibold font-label hover:bg-surface-container-highest transition-colors">
+                                        System Report
+                                    </button>
+                                    <button onClick={() => navigate('/upload')} className="bg-gradient-to-br from-primary to-primary-container text-white px-6 py-3 rounded-md font-semibold font-label shadow-lg hover:brightness-110 transition-all">
+                                        New Audit
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-6">
+                                <div className="col-span-12 lg:col-span-7 bg-surface-container-lowest p-8 rounded-xl micro-grid relative overflow-hidden group border border-slate-200">
+                                    <div className="relative z-10 flex flex-col h-full">
+                                        <div className="flex justify-between items-start mb-8">
+                                            <h3 className="text-xs font-label uppercase tracking-[0.2em] text-on-surface-variant">AI Fairness Status</h3>
+                                            <span className="bg-emerald-100 text-[#00875A] px-3 py-1 rounded-full text-xs font-bold">COMPLIANT</span>
+                                        </div>
+                                        <div className="flex items-center space-x-12 flex-1">
+                                            <div className="relative h-48 w-48 flex items-center justify-center">
+                                                <svg className="transform -rotate-90 w-44 h-44">
+                                                    <circle className="text-surface-container-high" cx="88" cy="88" fill="transparent" r="80" stroke="currentColor" strokeWidth="12"></circle>
+                                                    <circle className="text-primary" cx="88" cy="88" fill="transparent" r="80" stroke="currentColor" strokeDasharray="502.6" strokeDashoffset="40" strokeWidth="12"></circle>
+                                                </svg>
+                                                <div className="absolute text-center">
+                                                    <span className="block text-5xl font-extrabold font-headline text-on-surface">92<span className="text-2xl font-normal">%</span></span>
+                                                    <span className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Integrity Score</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 space-y-4">
+                                                <div className="p-4 bg-surface-container-low rounded-lg">
+                                                    <div className="flex justify-between text-xs font-label text-on-surface-variant mb-1">
+                                                        <span>Demographic Parity</span>
+                                                        <span className="text-primary font-bold">0.98</span>
+                                                    </div>
+                                                    <div className="w-full bg-surface-container-highest h-1.5 rounded-full">
+                                                        <div className="bg-primary h-full w-[98%] rounded-full"></div>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 bg-surface-container-low rounded-lg">
+                                                    <div className="flex justify-between text-xs font-label text-on-surface-variant mb-1">
+                                                        <span>Equal Opportunity</span>
+                                                        <span className="text-primary font-bold">0.89</span>
+                                                    </div>
+                                                    <div className="w-full bg-surface-container-highest h-1.5 rounded-full">
+                                                        <div className="bg-primary h-full w-[89%] rounded-full"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="col-span-12 lg:col-span-5 bg-surface-container-low p-8 rounded-xl flex flex-col justify-between border border-slate-200">
+                                    <div>
+                                        <h3 className="text-xs font-label uppercase tracking-[0.2em] text-on-surface-variant mb-6">System Health</h3>
+                                        <div className="space-y-6">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center">
+                                                    <span className="h-2 w-2 rounded-full bg-[#00875A] mr-3"></span>
+                                                    <span className="text-sm font-semibold">Active Firewall</span>
+                                                </div>
+                                                <span className="text-xs font-label text-on-surface-variant">Uptime: 99.9%</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center">
+                                                    <span className="h-2 w-2 rounded-full bg-[#00875A] mr-3"></span>
+                                                    <span className="text-sm font-semibold">Bias Monitor</span>
+                                                </div>
+                                                <span className="text-xs font-label text-on-surface-variant">Sync: 2ms ago</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center">
+                                                    <span className="h-2 w-2 rounded-full bg-amber-400 mr-3"></span>
+                                                    <span className="text-sm font-semibold">Neural Processing</span>
+                                                </div>
+                                                <span className="text-xs font-label text-on-surface-variant">Load: 72%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-8 pt-6 border-t border-outline-variant/20">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-label text-on-surface-variant">Database integrity verified</span>
+                                            <span className="material-symbols-outlined text-sm text-primary">verified_user</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <Link to="/upload" className="group flex flex-col items-center justify-center p-8 bg-surface-container-lowest rounded-xl hover:bg-surface-bright transition-all border border-slate-200 hover:border-primary">
+                                        <span className="material-symbols-outlined text-4xl text-primary mb-3 group-hover:scale-110 transition-transform">cloud_upload</span>
+                                        <span className="font-bold font-headline text-primary">Upload Dataset</span>
+                                        <span className="text-[10px] font-label uppercase tracking-wider text-slate-400 mt-1">Ingest CSV/JSON</span>
+                                    </Link>
+                                    <Link to="/analysis" className="group flex flex-col items-center justify-center p-8 bg-surface-container-lowest rounded-xl hover:bg-surface-bright transition-all border border-slate-200 hover:border-primary">
+                                        <span className="material-symbols-outlined text-4xl text-primary mb-3 group-hover:scale-110 transition-transform">analytics</span>
+                                        <span className="font-bold font-headline text-primary">Analyze Bias</span>
+                                        <span className="text-[10px] font-label uppercase tracking-wider text-slate-400 mt-1">Run Fairness Audit</span>
+                                    </Link>
+                                    <Link to="/firewall" className="group flex flex-col items-center justify-center p-8 bg-surface-container-lowest rounded-xl hover:bg-surface-bright transition-all border border-slate-200 hover:border-primary">
+                                        <span className="material-symbols-outlined text-4xl text-primary mb-3 group-hover:scale-110 transition-transform">rocket_launch</span>
+                                        <span className="font-bold font-headline text-primary">Run Prediction</span>
+                                        <span className="text-[10px] font-label uppercase tracking-wider text-slate-400 mt-1">Live Inference</span>
+                                    </Link>
+                                    <Link to="/explainability" className="group flex flex-col items-center justify-center p-8 bg-surface-container-lowest rounded-xl hover:bg-surface-bright transition-all border border-slate-200 hover:border-primary">
+                                        <span className="material-symbols-outlined text-4xl text-primary mb-3 group-hover:scale-110 transition-transform">psychology</span>
+                                        <span className="font-bold font-headline text-primary">Explainability</span>
+                                        <span className="text-[10px] font-label uppercase tracking-wider text-slate-400 mt-1">Shapley Values</span>
+                                    </Link>
+                                </div>
+
+                                <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl p-0 overflow-hidden border border-slate-200 shadow-sm">
+                                    <div className="p-6 border-b border-surface-container">
+                                        <h3 className="text-xs font-label uppercase tracking-[0.2em] text-on-surface-variant">Recent Activity</h3>
+                                    </div>
+                                    <div className="divide-y divide-surface-container">
+                                        <div className="p-6 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+                                            <div className="flex items-center space-x-4">
+                                                <div className="bg-blue-50 p-2 rounded-lg">
+                                                    <span className="material-symbols-outlined text-blue-800">history_edu</span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold">Bias Audit Completed: 'Loan_Approval_V4'</p>
+                                                    <p className="text-xs text-on-surface-variant">Model sensitivity adjusted for age-protected attributes.</p>
+                                                </div>
+                                            </div>
+                                            <span className="text-xs font-label text-on-surface-variant">14m ago</span>
+                                        </div>
+                                        <div className="p-6 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+                                            <div className="flex items-center space-x-4">
+                                                <div className="bg-red-50 p-2 rounded-lg">
+                                                    <span className="material-symbols-outlined text-tertiary">warning</span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold">Intervention: Decision Firewall triggered</p>
+                                                    <p className="text-xs text-on-surface-variant">Flagged 23 outlier predictions in 'Hiring_Pipeline'.</p>
+                                                </div>
+                                            </div>
+                                            <span className="text-xs font-label text-on-surface-variant">2h ago</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="col-span-12 lg:col-span-4 bg-primary text-white p-8 rounded-xl relative overflow-hidden">
+                                    <div className="absolute inset-0 opacity-10 micro-grid"></div>
+                                    <div className="relative z-10 h-full flex flex-col justify-between">
+                                        <div>
+                                            <span className="material-symbols-outlined text-4xl mb-4">lightbulb</span>
+                                            <h4 className="text-2xl font-bold font-headline mb-4">Arbiter Intelligence</h4>
+                                            <p className="text-blue-100 text-sm leading-relaxed">
+                                                Our analysis suggests that the "Loan_Approval_V4" model shows a 3.4% variance in approval rates for rural demographics. 
+                                                <br/><br/>
+                                                Applying a <strong>Synthetic Minority Over-sampling</strong> technique (SMOTE) is recommended.
+                                            </p>
+                                        </div>
+                                        <button className="mt-8 bg-white/10 backdrop-blur-md border border-white/20 py-3 rounded-md font-bold text-sm hover:bg-white/20 transition-colors">
+                                            Apply Strategy
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // --- Screen 2: Data Upload ---
+        const DataUploadPage = () => {
+            return (
+                <div className="min-h-screen">
+                    <SideNavBar />
+                    <TopAppBar title="Data Ingestion Engine" badge="v2.4.0" />
+                    <main className="ml-64 p-8">
+                        <div className="max-w-6xl mx-auto space-y-10">
+                            <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-outline-variant/20">
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-bold tracking-[0.2em] text-primary uppercase">Step 01 / Ingestion</p>
+                                    <h3 className="font-headline text-4xl font-extrabold text-on-surface">Import Dataset</h3>
+                                    <p className="text-on-surface-variant max-w-xl text-sm leading-relaxed">
+                                        Securely upload your structured training data for fairness auditing. Our engine will scan for proxy variables and historical biases.
+                                    </p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button className="px-6 py-3 rounded-xl bg-surface-container-high text-on-secondary-container font-semibold text-sm hover:bg-surface-bright transition-colors">
+                                        View Documentation
+                                    </button>
+                                    <button className="px-6 py-3 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary font-semibold text-sm shadow-lg flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm">help</span>
+                                        Need Help?
+                                    </button>
+                                </div>
+                            </section>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                <div className="lg:col-span-7 space-y-6">
+                                    <div className="bg-surface-container-lowest rounded-full p-16 border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center text-center space-y-4 hover:border-primary/50 transition-colors group relative overflow-hidden">
+                                        <div className="absolute inset-0 micro-grid-overlay opacity-5 group-hover:opacity-10 pointer-events-none"></div>
+                                        <div className="w-20 h-20 rounded-full bg-surface-container-low flex items-center justify-center text-primary mb-2 group-hover:scale-110 transition-transform">
+                                            <span className="material-symbols-outlined text-4xl">cloud_upload</span>
+                                        </div>
+                                        <h4 className="font-headline text-xl font-bold text-on-surface">Drag & Drop Dataset</h4>
+                                        <p className="text-on-surface-variant text-sm max-w-xs">Supported formats: CSV, JSON, Parquet. Max file size: 500MB.</p>
+                                        <div className="pt-6">
+                                            <label className="cursor-pointer px-8 py-4 rounded-xl bg-primary text-on-primary font-bold text-sm tracking-tight hover:shadow-xl transition-all">
+                                                Select File from Computer
+                                                <input className="hidden" type="file"/>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="bg-surface-container-low p-6 rounded-full border-l-4 border-primary">
+                                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Encrypted Tunnel</p>
+                                            <div className="flex items-center gap-2 text-primary font-bold">
+                                                <span className="material-symbols-outlined text-sm">lock</span>
+                                                <span>AES-256 Enabled</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-surface-container-low p-6 rounded-full border-l-4 border-secondary">
+                                            <p className="text-[10px] font-bold text-outline uppercase mb-1">Privacy Filter</p>
+                                            <div className="flex items-center gap-2 text-secondary font-bold">
+                                                <span className="material-symbols-outlined text-sm">visibility_off</span>
+                                                <span>PII Redaction Ready</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <aside className="lg:col-span-5">
+                                    <div className="bg-surface-container-lowest p-8 rounded-full shadow-sm border border-slate-100 space-y-8 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-16 -mt-16"></div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-headline text-lg font-bold text-on-surface">Configuration</h4>
+                                            <p className="text-on-surface-variant text-xs">Define analysis parameters before processing.</p>
+                                        </div>
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest pl-1">Target Column</label>
+                                                <select className="w-full bg-surface-container-highest border-none rounded-lg py-4 px-4 text-sm focus:ring-0">
+                                                    <option>approved_loan</option>
+                                                    <option>risk_score</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest pl-1">Protected Attribute</label>
+                                                <select className="w-full bg-surface-container-highest border-none rounded-lg py-4 px-4 text-sm focus:ring-0">
+                                                    <option>race_ethnicity</option>
+                                                    <option>gender_identity</option>
+                                                    <option>age_bracket</option>
+                                                </select>
+                                            </div>
+                                            <div className="pt-6 space-y-4">
+                                                <button className="w-full py-4 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold text-sm shadow-xl flex items-center justify-center gap-3">
+                                                    <span className="material-symbols-outlined">analytics</span>
+                                                    Analyze Bias
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </aside>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // --- Screen 3: Bias Analysis ---
+        const BiasAnalysisPage = () => {
+            return (
+                <div className="min-h-screen">
+                    <SideNavBar />
+                    <TopAppBar />
+                    <main className="ml-64 p-8 relative overflow-hidden">
+                        <div className="absolute inset-0 micro-grid-bg pointer-events-none"></div>
+                        <section className="relative z-10 mb-12 flex justify-between items-end">
+                            <div className="max-w-2xl">
+                                <span className="text-[10px] font-bold tracking-[0.2em] text-blue-800 uppercase mb-2 block">Audit Session: #FAIR-2904</span>
+                                <h2 className="text-5xl font-extrabold text-on-surface tracking-tight leading-tight">Bias Analysis Report</h2>
+                                <p className="mt-4 text-on-surface-variant leading-relaxed text-lg font-light">
+                                    Deep-tier algorithmic evaluation of the <span className="font-semibold text-primary">Global Credit Scoring Engine v4.2</span>. 
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button className="bg-surface-container-high text-on-secondary-container px-6 py-2.5 rounded-md font-medium text-sm flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[20px]">download</span>
+                                    Export PDF
+                                </button>
+                                <button className="bg-gradient-to-br from-primary to-primary-container text-white px-6 py-2.5 rounded-md font-medium text-sm flex items-center gap-2 shadow-lg">
+                                    <span className="material-symbols-outlined text-[20px]">refresh</span>
+                                    Rerun Analysis
+                                </button>
+                            </div>
+                        </section>
+
+                        <div className="grid grid-cols-12 gap-6 relative z-10">
+                            <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h3 className="text-xs font-bold tracking-widest text-slate-500 uppercase">Metric: Disparate Impact</h3>
+                                    <span className="material-symbols-outlined text-tertiary">warning</span>
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-7xl font-extrabold text-tertiary">0.74</span>
+                                    <span className="text-tertiary-container text-sm font-semibold px-2 py-0.5 rounded bg-tertiary/10">-6% vs Target</span>
+                                </div>
+                                <p className="mt-6 text-on-surface-variant text-sm leading-relaxed">
+                                    Selection rates for protected groups are significantly deviant. Threshold is 0.80.
+                                </p>
+                                <div className="mt-10 h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+                                    <div className="h-full bg-tertiary rounded-full w-[74%]"></div>
+                                </div>
+                            </div>
+
+                            <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
+                                <h3 className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-6">Demographic Representation</h3>
+                                <div className="grid grid-cols-3 gap-8 items-center h-48">
+                                    <div className="relative h-40 w-40 flex items-center justify-center">
+                                        <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 100 100">
+                                            <circle cx="50" cy="50" fill="transparent" r="40" stroke="#f2f4f6" strokeWidth="12"></circle>
+                                            <circle cx="50" cy="50" fill="transparent" r="40" stroke="#003d9b" strokeDasharray="160 251" strokeWidth="12"></circle>
+                                        </svg>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                            <span className="text-2xl font-bold">4.2M</span>
+                                            <span className="text-[10px] text-slate-400">TOTAL DATA</span>
+                                        </div>
+                                    </div>
+                                    <div className="col-span-2 space-y-4">
+                                        <div>
+                                            <div className="flex justify-between text-xs font-bold mb-1">
+                                                <span>Demographic A</span>
+                                                <span>62%</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+                                                <div className="h-full bg-primary w-[62%]"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-xs font-bold mb-1">
+                                                <span>Demographic B</span>
+                                                <span>24%</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+                                                <div className="h-full bg-secondary w-[24%]"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="col-span-12 lg:col-span-12 bg-tertiary text-white p-8 rounded-xl shadow-2xl shadow-tertiary/30 relative overflow-hidden">
+                                <div className="relative z-10 flex items-center justify-between">
+                                    <div className="max-w-xl">
+                                        <h3 className="text-xs font-bold tracking-widest text-white/70 uppercase mb-4">Urgent Action Required</h3>
+                                        <p className="text-3xl font-bold leading-tight mb-4">Bias Mitigation Strategy Suggested</p>
+                                        <p className="text-white/80 font-light">
+                                            Apply a Reweighing Intervention to equalize sample weights.
+                                        </p>
+                                    </div>
+                                    <button className="bg-white text-tertiary px-8 py-4 rounded-xl font-bold flex items-center gap-3 hover:bg-white/90">
+                                        Apply Mitigation Strategy
+                                        <span className="material-symbols-outlined">arrow_forward</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // --- Screen 4: Decision Firewall ---
+        const DecisionFirewallPage = () => {
+            return (
+                <div className="min-h-screen">
+                    <SideNavBar />
+                    <TopAppBar title="Decision Firewall" badge="Live Monitor" />
+                    <main className="ml-64 p-8">
+                        <div className="max-w-7xl mx-auto space-y-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                                <div className="lg:col-span-8 space-y-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">Real-Time Algorithmic Intercept</p>
+                                    <h2 className="text-4xl font-extrabold font-headline text-on-surface tracking-tight leading-tight">Predictive Fairness Audit</h2>
+                                    <p className="text-on-surface-variant max-w-2xl text-lg leading-relaxed">
+                                        Our Arbiter Protocol monitors every calculation for demographic parity.
+                                    </p>
+                                </div>
+                                <div className="lg:col-span-4 flex justify-end">
+                                    <div className="bg-surface-container-low p-4 rounded-xl micro-grid-overlay w-full">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-bold text-outline">LATENCY</span>
+                                            <span className="text-xs font-mono font-bold text-primary">12ms</span>
+                                        </div>
+                                        <div className="h-1 bg-outline-variant rounded-full overflow-hidden">
+                                            <div className="h-full bg-primary w-3/4"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                <div className="lg:col-span-4 bg-surface-container-lowest p-8 rounded-[40px] shadow-sm space-y-6 border border-slate-100">
+                                    <h3 className="text-lg font-bold font-headline mb-4">Input Parameters</h3>
+                                    <div className="space-y-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-outline tracking-wider uppercase">Credit Score</label>
+                                            <input className="w-full bg-surface-container-highest border-none rounded-xl p-3 focus:ring-0" type="number" defaultValue="720"/>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-outline tracking-wider uppercase">Annual Income</label>
+                                            <input className="w-full bg-surface-container-highest border-none rounded-xl p-3 focus:ring-0" type="number" defaultValue="85000"/>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-outline tracking-wider uppercase">Age</label>
+                                            <input className="w-full bg-surface-container-highest border-none rounded-xl p-3 focus:ring-0" type="number" defaultValue="34"/>
+                                        </div>
+                                    </div>
+                                    <button className="w-full bg-gradient-to-br from-primary to-primary-container text-white py-4 rounded-xl font-bold font-headline shadow-lg flex items-center justify-center gap-2 mt-8">
+                                        <span className="material-symbols-outlined text-lg">bolt</span>
+                                        RUN PREDICTION
+                                    </button>
+                                </div>
+
+                                <div className="lg:col-span-8 flex flex-col gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="bg-surface-container-lowest p-8 rounded-[40px] shadow-sm relative overflow-hidden flex flex-col justify-between border border-slate-100">
+                                            <div>
+                                                <p className="text-[10px] font-bold text-outline uppercase tracking-widest mb-1">Model Confidence</p>
+                                                <h4 className="text-5xl font-black font-headline text-on-surface">94.8%</h4>
+                                            </div>
+                                            <div className="mt-8">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-xs text-on-surface-variant">Stochastic Variance</span>
+                                                    <span className="text-xs font-bold text-primary">Low</span>
+                                                </div>
+                                                <div className="h-2 bg-surface-container-low rounded-full">
+                                                    <div className="h-full bg-primary rounded-full" style={{width: '94.8%'}}></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-error-container border-2 border-error p-8 rounded-[40px] shadow-sm flex flex-col items-center justify-center text-center space-y-4">
+                                            <span className="material-symbols-outlined text-on-error-container text-6xl">warning</span>
+                                            <div>
+                                                <h3 className="text-2xl font-black font-headline text-on-error-container tracking-tight leading-none mb-2">Bias Risk Detected</h3>
+                                                <p className="text-on-error-container font-bold text-lg">Decision Intercepted</p>
+                                            </div>
+                                            <div className="px-4 py-2 bg-on-error-container text-error-container rounded-lg text-xs font-bold uppercase tracking-widest">
+                                                HOLD ACTIVE
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-surface-container-lowest p-8 rounded-[40px] shadow-sm flex-1 border border-slate-100">
+                                        <h3 className="text-lg font-bold font-headline mb-6">Explainability Analysis</h3>
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center text-xs font-bold">
+                                                    <span>Credit Score History</span>
+                                                    <span className="text-primary">+0.42</span>
+                                                </div>
+                                                <div className="h-3 bg-surface-container-low rounded-lg overflow-hidden flex">
+                                                    <div className="h-full bg-primary" style={{width: '42%'}}></div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center text-xs font-bold">
+                                                    <span>Zip Code Correlation</span>
+                                                    <span className="text-tertiary">-0.19 (Red Flag)</span>
+                                                </div>
+                                                <div className="h-3 bg-surface-container-low rounded-lg overflow-hidden flex">
+                                                    <div className="h-full bg-tertiary" style={{width: '19%'}}></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // Placeholder pages for other routes
+        const PlaceholderPage = ({ title }) => (
+            <div className="min-h-screen">
+                <SideNavBar />
+                <TopAppBar />
+                <main className="ml-64 p-8 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+                    <div className="text-center">
+                        <h2 className="text-4xl font-bold font-headline text-slate-300">{title}</h2>
+                        <p className="text-slate-400 mt-4">This module is under system calibration.</p>
+                        <Link to="/" className="mt-8 inline-block text-primary font-bold hover:underline">Back to Dashboard</Link>
+                    </div>
+                </main>
+            </div>
+        );
+
+        // --- App Component ---
+        const App = () => {
+            return (
+                <MemoryRouter>
+                    <Routes>
+                        <Route path="/" element={<DashboardPage />} />
+                        <Route path="/upload" element={<DataUploadPage />} />
+                        <Route path="/analysis" element={<BiasAnalysisPage />} />
+                        <Route path="/firewall" element={<DecisionFirewallPage />} />
+                        <Route path="/training" element={<PlaceholderPage title="Model Training Lab" />} />
+                        <Route path="/explainability" element={<PlaceholderPage title="Explainability Studio" />} />
+                    </Routes>
+                </MemoryRouter>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
