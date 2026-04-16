@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from fairlearn.metrics import demographic_parity_difference, equal_opportunity_difference
+from fairlearn.metrics import demographic_parity_difference, true_positive_rate_difference
 import joblib
 import os
 from typing import Dict, Any, List, Tuple
@@ -50,7 +50,7 @@ class ModelTrainer:
         dp_diff = demographic_parity_difference(
             y_test, y_pred, sensitive_features=S_test
         )
-        eo_diff = equal_opportunity_difference(
+        eo_diff = true_positive_rate_difference(
             y_test, y_pred, sensitive_features=S_test
         )
 
