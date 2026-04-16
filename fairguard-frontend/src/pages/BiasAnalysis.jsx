@@ -10,14 +10,12 @@ const BiasAnalysis = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // In a real scenario, we might pass config or fetch the latest session
                 const result = await analyzeBias({ 
-                    target_column: 'approved_loan', 
-                    protected_attribute: 'race_ethnicity' 
+                    target_column: 'loan_approved', 
+                    protected_attribute: 'sender_gender' 
                 });
                 setData(result);
             } catch (err) {
-                // Fallback to static data for demo if API fails
                 console.warn("API failed, using demo data");
                 setData({
                     disparate_impact: 0.74,
@@ -33,67 +31,90 @@ const BiasAnalysis = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-screen ml-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div className="flex items-center justify-center h-screen ml-64 bg-slate-50">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <span className="text-xs font-black font-label text-slate-400 uppercase tracking-[0.2em]">Analyzing Algorithmic Bias...</span>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen">
-            <TopAppBar />
-            <main className="ml-64 p-8 relative overflow-hidden">
-                <div className="absolute inset-0 micro-grid-bg pointer-events-none"></div>
-                <section className="relative z-10 mb-12 flex justify-between items-end">
-                    <div className="max-w-2xl">
-                        <span className="text-[10px] font-bold tracking-[0.2em] text-blue-800 uppercase mb-2 block">Audit Session: #FAIR-2904</span>
-                        <h2 className="text-5xl font-extrabold text-on-surface tracking-tight leading-tight">Bias Analysis Report</h2>
-                        <p className="mt-4 text-on-surface-variant leading-relaxed text-lg font-light">
-                            Deep-tier algorithmic evaluation of the <span className="font-semibold text-primary">Global Credit Scoring Engine v4.2</span>. 
+        <div className="min-h-screen bg-slate-50">
+            <TopAppBar title="Bias Analysis Report" badge="Live Audit" />
+            <main className="ml-64 p-12 relative overflow-hidden">
+                <div className="absolute inset-0 micro-grid-bg pointer-events-none opacity-10"></div>
+                
+                <section className="relative z-10 mb-16 flex justify-between items-end">
+                    <div className="max-w-3xl">
+                        <span className="text-[11px] font-black tracking-[0.3em] text-primary uppercase mb-4 block">Session Trace: #FAIR-X800</span>
+                        <h2 className="text-6xl font-black text-[#191c1e] tracking-tighter leading-none mb-6">Global Audit Report</h2>
+                        <p className="text-slate-500 leading-relaxed text-xl font-light">
+                            Deep-tier algorithmic evaluation of the <span className="font-bold text-primary">FairGuard Ingestion Engine v1.0</span>. 
                         </p>
+                    </div>
+                    <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex gap-2">
+                        <button className="px-6 py-2.5 rounded-xl bg-white text-slate-800 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-colors">JSON Export</button>
+                        <button className="px-6 py-2.5 rounded-xl bg-primary text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 hover:brightness-110 transition-all">Download PDF</button>
                     </div>
                 </section>
 
-                <div className="grid grid-cols-12 gap-6 relative z-10">
-                    <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
-                        <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-xs font-bold tracking-widest text-slate-500 uppercase">Metric: Disparate Impact</h3>
-                            <span className="material-symbols-outlined text-tertiary">warning</span>
+                <div className="grid grid-cols-12 gap-8 relative z-10">
+                    {/* Key Metric Card */}
+                    <div className="col-span-12 lg:col-span-4 bg-white p-10 rounded-[40px] shadow-sm border border-slate-200 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-full pointer-events-none"></div>
+                        <div className="flex items-center justify-between mb-10">
+                            <h3 className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase">Disparate Impact</h3>
+                            <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-red-600 font-black">gpp_maybe</span>
+                            </div>
                         </div>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-7xl font-extrabold text-tertiary">{data.disparate_impact}</span>
-                            <span className="text-tertiary-container text-sm font-semibold px-2 py-0.5 rounded bg-tertiary/10">-6% vs Target</span>
+                        <div className="flex items-baseline gap-3">
+                            <span className="text-8xl font-black text-red-600 tracking-tighter">{data.disparate_impact}</span>
+                            <div className="flex flex-col gap-1">
+                                <span className="text-red-600 text-[11px] font-black px-2.5 py-1 rounded-full bg-red-50 uppercase tracking-widest border border-red-100">-6% vs Target</span>
+                                <span className="text-slate-400 text-[9px] uppercase tracking-widest font-black ml-1">Critical Deviation</span>
+                            </div>
                         </div>
-                        <p className="mt-6 text-on-surface-variant text-sm leading-relaxed">
-                            Selection rates for protected groups are significantly deviant. Threshold is 0.80.
+                        <p className="mt-8 text-slate-500 text-md leading-relaxed font-light italic border-l-2 border-red-100 pl-4">
+                            Selection rates for protected groups are significantly deviant. Minimum ethical threshold is 0.80.
                         </p>
-                        <div className="mt-10 h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
-                            <div className="h-full bg-tertiary rounded-full" style={{ width: `${data.disparate_impact * 100}%` }}></div>
+                        <div className="mt-12 h-3 w-full bg-slate-100 rounded-full overflow-hidden p-0.5">
+                            <div className="h-full bg-red-500 rounded-full shadow-[0_0_12px_rgba(239,68,68,0.3)] transition-all duration-1000" style={{ width: `${data.disparate_impact * 100}%` }}></div>
                         </div>
                     </div>
 
-                    <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
-                        <h3 className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-6">Demographic Representation</h3>
-                        <div className="grid grid-cols-3 gap-8 items-center h-48">
-                            <div className="relative h-40 w-40 flex items-center justify-center">
+                    {/* Representation Grid */}
+                    <div className="col-span-12 lg:col-span-8 bg-white p-10 rounded-[40px] shadow-sm border border-slate-200 flex flex-col justify-between">
+                        <div className="flex justify-between items-center mb-10">
+                            <h3 className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase">Demographic Representation</h3>
+                            <span className="text-[10px] font-black text-primary bg-primary/5 px-3 py-1 rounded-full uppercase tracking-widest">Verified Data</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-center flex-1">
+                            <div className="relative h-48 w-48 mx-auto flex items-center justify-center">
                                 <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" fill="transparent" r="40" stroke="#f2f4f6" strokeWidth="12"></circle>
-                                    <circle cx="50" cy="50" fill="transparent" r="40" stroke="#003d9b" strokeDasharray="160 251" strokeWidth="12"></circle>
+                                    <circle cx="50" cy="50" fill="transparent" r="44" stroke="#f1f5f9" strokeWidth="12"></circle>
+                                    <circle cx="50" cy="50" fill="transparent" r="44" stroke="#003d9b" strokeDasharray="160 276" strokeWidth="12" strokeLinecap="round"></circle>
+                                    <circle cx="50" cy="50" fill="transparent" r="44" stroke="#346286" strokeDasharray="60 276" strokeDashoffset="-160" strokeWidth="12" strokeLinecap="round"></circle>
                                 </svg>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-2xl font-bold">4.2M</span>
-                                    <span className="text-[10px] text-slate-400 font-label uppercase">TOTAL DATA</span>
+                                    <span className="text-4xl font-black text-[#191c1e]">4.2M</span>
+                                    <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Audit Items</span>
                                 </div>
                             </div>
-                            <div className="col-span-2 space-y-4">
+                            <div className="md:col-span-2 space-y-8">
                                 {Object.entries(data.representation).map(([group, val]) => (
-                                    <div key={group}>
-                                        <div className="flex justify-between text-xs font-bold mb-1">
-                                            <span>Demographic {group}</span>
-                                            <span>{val}%</span>
+                                    <div key={group} className="group transition-all hover:translate-x-1">
+                                        <div className="flex justify-between text-[11px] font-black uppercase tracking-widest mb-3 opacity-80 group-hover:opacity-100">
+                                            <span className="text-slate-500">Demographic {group}</span>
+                                            <span className="text-primary">{val}% Distribution</span>
                                         </div>
-                                        <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
-                                            <div className={`h-full ${group === 'A' ? 'bg-primary' : 'bg-secondary'}`} style={{ width: `${val}%` }}></div>
+                                        <div className="h-2.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100 shadow-inner">
+                                            <div 
+                                                className={`h-full transition-all duration-1000 shadow-[0_0_12px_rgba(0,61,155,0.2)] ${group === 'A' ? 'bg-primary' : 'bg-secondary'}`} 
+                                                style={{ width: `${val}%` }}
+                                            ></div>
                                         </div>
                                     </div>
                                 ))}
@@ -101,18 +122,26 @@ const BiasAnalysis = () => {
                         </div>
                     </div>
 
-                    <div className="col-span-12 lg:col-span-12 bg-tertiary text-white p-8 rounded-xl shadow-2xl shadow-tertiary/30 relative overflow-hidden">
-                        <div className="relative z-10 flex items-center justify-between">
-                            <div className="max-w-xl">
-                                <h3 className="text-xs font-bold tracking-widest text-white/70 uppercase mb-4">Urgent Action Required</h3>
-                                <p className="text-3xl font-bold leading-tight mb-4">Bias Mitigation Strategy Suggested</p>
-                                <p className="text-white/80 font-light">
-                                    Apply a Reweighing Intervention to equalize sample weights.
+                    {/* Mitigation Strategy Card */}
+                    <div className="col-span-12 lg:col-span-12 bg-primary text-white p-12 rounded-[48px] shadow-2xl shadow-primary/30 relative overflow-hidden group">
+                        <div className="absolute inset-0 micro-grid pointer-events-none opacity-20 transform group-hover:scale-110 transition-transform duration-1000"></div>
+                        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+                        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
+                            <div className="max-w-2xl text-center md:text-left">
+                                <div className="flex items-center gap-3 justify-center md:justify-start mb-6">
+                                    <div className="h-10 w-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-white">auto_awesome</span>
+                                    </div>
+                                    <h3 className="text-xs font-black tracking-[0.3em] text-blue-100 uppercase">Arbiter Recommendation</h3>
+                                </div>
+                                <h4 className="text-4xl font-black tracking-tighter leading-none mb-6">Apply Bias Mitigation Reweighing</h4>
+                                <p className="text-blue-100/70 text-lg font-light leading-relaxed">
+                                    Our engine suggests applying a <span className="text-white font-bold">Reweighing Intervention</span> to equalize sample weights across the age and gender protection tiers.
                                 </p>
                             </div>
-                            <button className="bg-white text-tertiary px-8 py-4 rounded-xl font-bold flex items-center gap-3 hover:bg-white/90 transition-colors">
-                                Apply Mitigation Strategy
-                                <span className="material-symbols-outlined">arrow_forward</span>
+                            <button className="bg-white text-primary px-10 py-5 rounded-[24px] font-black text-sm uppercase tracking-[0.2em] flex items-center gap-4 hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all shadow-xl">
+                                Execute Intervention
+                                <span className="material-symbols-outlined">bolt</span>
                             </button>
                         </div>
                     </div>
